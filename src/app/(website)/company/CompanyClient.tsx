@@ -4265,6 +4265,7 @@ export default function CompanyClient() {
                                                 src={certificate.fileUrl}
                                                 alt={`${certificate.title} Certificate`}
                                                 fill
+                                                unoptimized
                                                 sizes="(max-width: 768px) 100vw, 33vw"
                                                 className="
                                             object-contain

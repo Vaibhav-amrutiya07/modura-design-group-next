@@ -985,6 +985,7 @@ export default function ProjectsSection({
                                 src={selectedProject.coverUrl}
                                 alt={selectedProject.title}
                                 fill
+                                unoptimized
                                 sizes="100vw"
                                 className="
                                 object-contain

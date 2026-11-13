@@ -16,6 +16,7 @@ import {
     FiMapPin,
     FiPhone,
     FiSend,
+    FiRefreshCw,
 } from 'react-icons/fi';
 
 /* =========================================================
@@ -183,9 +184,28 @@ export default function ContactClient() {
 
     const router = useRouter();
 
+    const createCaptcha = () => {
+        const first = Math.floor(Math.random() * 9) + 1;
+        const second = Math.floor(Math.random() * 9) + 1;
+
+        return {
+            question: `${first} + ${second} = ?`,
+            answer: first + second,
+        };
+    };
+
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState('');
     const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
+    const [captcha, setCaptcha] = useState(createCaptcha);
+    const [captchaInput, setCaptchaInput] = useState('');
+    const [captchaError, setCaptchaError] = useState('');
+
+    const generateCaptcha = () => {
+        setCaptcha(createCaptcha());
+        setCaptchaInput('');
+        setCaptchaError('');
+    };
 
     const updateField = (field: keyof FormData, value: string) => {
         const updatedValue = field === 'phone'
@@ -226,7 +246,21 @@ export default function ContactClient() {
         }
 
         setErrors(nextErrors);
-        return Object.keys(nextErrors).length === 0;
+
+        let nextCaptchaError = '';
+
+        if (!captchaInput.trim()) {
+            nextCaptchaError = 'Please complete the CAPTCHA.';
+        } else if (Number(captchaInput) !== captcha.answer) {
+            nextCaptchaError = 'Incorrect CAPTCHA. Please try again.';
+        }
+
+        setCaptchaError(nextCaptchaError);
+
+        return (
+            Object.keys(nextErrors).length === 0 &&
+            !nextCaptchaError
+        );
     };
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -254,6 +288,7 @@ export default function ContactClient() {
 
             if (response.data?.success === true) {
                 router.push('/thankyou/inquiry');
+                generateCaptcha();
             } else {
                 setSubmitError(
                     response.data?.message ||
@@ -273,6 +308,7 @@ export default function ContactClient() {
             console.error('Contact Inquiry Error:', error);
         } finally {
             setIsSubmitting(false);
+            generateCaptcha();
         }
     };
 
@@ -577,6 +613,73 @@ export default function ContactClient() {
                                     )}
                                 </div>
 
+
+                                {/* =================================================
+    CAPTCHA
+================================================= */}
+
+                                <div>
+                                    <label className="mb-2.5 block text-[13px] font-bold tracking-[0.16em] text-modura-primary uppercase">
+                                        Security Verification
+                                        <span className="ml-1 text-red-600">*</span>
+                                    </label>
+
+                                    <div className="flex flex-wrap items-center gap-4">
+
+                                        {/* CAPTCHA QUESTION */}
+
+                                        <div className="flex h-[60px] min-w-[150px] items-center justify-center border border-modura-gray-200 bg-modura-off-white px-5">
+                                            <span className="select-none text-[22px] font-bold tracking-[0.08em] text-modura-primary">
+                                                {captcha.question}
+                                            </span>
+                                        </div>
+
+                                        {/* REFRESH BUTTON */}
+
+                                        <button
+                                            type="button"
+                                            onClick={generateCaptcha}
+                                            aria-label="Refresh CAPTCHA"
+                                            title="Refresh CAPTCHA"
+                                            className="flex h-[60px] w-[60px] items-center justify-center border border-modura-gray-200 bg-modura-white text-modura-primary transition-all duration-300 hover:border-modura-secondary hover:text-modura-secondary"
+                                        >
+                                            <FiRefreshCw size={20} />
+                                        </button>
+
+                                        {/* ANSWER INPUT */}
+
+                                        <input
+                                            type="text"
+                                            inputMode="numeric"
+                                            maxLength={2}
+                                            value={captchaInput}
+                                            placeholder="Enter answer"
+                                            aria-label="CAPTCHA answer"
+                                            aria-invalid={Boolean(captchaError)}
+                                            onChange={(e) => {
+                                                const value = e.target.value
+                                                    .replace(/\D/g, '')
+                                                    .slice(0, 2);
+
+                                                setCaptchaInput(value);
+                                                setCaptchaError('');
+                                            }}
+                                            className={`h-[60px] w-full max-w-[220px] border bg-modura-white px-5 text-[14px] font-medium text-modura-primary outline-none transition-all duration-300 placeholder:text-modura-gray-400 focus:border-modura-primary ${captchaError
+                                                    ? 'border-red-500'
+                                                    : 'border-modura-gray-200'
+                                                }`}
+                                        />
+
+                                    </div>
+
+                                    {captchaError && (
+                                        <p role="alert" className="mt-1.5 text-[12px] text-red-600">
+                                            {captchaError}
+                                        </p>
+                                    )}
+                                </div>
+
+
                                 {/* SUBMIT */}
 
                                 <button
@@ -605,7 +708,7 @@ export default function ContactClient() {
                                     "
                                 >
                                     <span className="relative z-10">
-                                         {isSubmitting ? 'Submitting...' : 'Send Inquiry'}
+                                        {isSubmitting ? 'Submitting...' : 'Send Inquiry'}
                                     </span>
 
                                     <FiSend

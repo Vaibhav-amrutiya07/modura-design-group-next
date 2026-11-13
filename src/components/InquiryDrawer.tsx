@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
-import { FiArrowUpRight, FiX, FiUser, FiMail, FiPhone } from 'react-icons/fi';
+import { FiArrowUpRight, FiX, FiUser, FiMail, FiPhone, FiRefreshCw } from 'react-icons/fi';
 
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
@@ -13,6 +13,18 @@ import gsap from 'gsap';
 
 
 const InquiryDrawer = () => {
+
+    const createCaptcha = () => {
+        const first = Math.floor(Math.random() * 9) + 1;
+        const second = Math.floor(Math.random() * 9) + 1;
+
+        return {
+            question: `${first} + ${second} = ?`,
+            answer: first + second,
+        };
+    };
+
+
     const [open, setOpen] = useState(false);
 
     const router = useRouter();
@@ -27,6 +39,26 @@ const InquiryDrawer = () => {
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submitError, setSubmitError] = useState('');
+
+    const [captcha, setCaptcha] = useState<{
+        question: string;
+        answer: number;
+    } | null>(null);
+
+    const [captchaInput, setCaptchaInput] = useState('');
+    const [captchaError, setCaptchaError] = useState('');
+
+    const generateCaptcha = () => {
+        setCaptcha(createCaptcha());
+        setCaptchaInput('');
+        setCaptchaError('');
+    };
+
+    useEffect(() => {
+        if (open) {
+            generateCaptcha();
+        }
+    }, [open]);
 
     const handleInputChange = (
         e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -79,6 +111,18 @@ const InquiryDrawer = () => {
         //     return;
         // }
 
+        if (!captcha || !captchaInput.trim()) {
+            setCaptchaError('Please complete the CAPTCHA.');
+            return;
+        }
+
+        if (Number(captchaInput) !== captcha.answer) {
+            setCaptchaError('Incorrect CAPTCHA. Please try again.');
+            return;
+        }
+
+        setCaptchaError('');
+
         setIsSubmitting(true);
 
         try {
@@ -105,6 +149,8 @@ const InquiryDrawer = () => {
 
                 // Redirect to Thank You page
                 router.push('/thankyou/inquiry');
+
+                generateCaptcha();
             } else {
                 setSubmitError(
                     response.data?.message ||
@@ -126,6 +172,7 @@ const InquiryDrawer = () => {
             console.error('Get In Touch API Error:', error);
         } finally {
             setIsSubmitting(false);
+            generateCaptcha();
         }
     };
 
@@ -447,6 +494,71 @@ const InquiryDrawer = () => {
                             className="focus:border-modura-secondary w-full resize-none border-b border-white/20 bg-transparent py-3 text-sm text-white outline-none"
                         />
                     </div>
+
+
+                    {/* =================================================
+    CAPTCHA
+================================================= */}
+
+                    <div className="inquiry-field">
+                        <label className="text-modura-gray-400 mb-2 block text-[11px] tracking-widest uppercase">
+                            Security Verification
+                            <span className="ml-1 text-red-400">*</span>
+                        </label>
+
+                        <div className="flex flex-wrap items-center gap-3">
+
+                            {/* QUESTION */}
+
+                            <div className="flex h-[50px] min-w-[135px] items-center justify-center border border-white/20 bg-white/5 px-4">
+                                <span className="select-none text-[19px] font-bold tracking-[0.08em] text-white">
+                                    {captcha?.question ?? 'Loading...'}
+                                </span>
+                            </div>
+
+                            {/* REFRESH BUTTON */}
+
+                            <button
+                                type="button"
+                                onClick={generateCaptcha}
+                                aria-label="Refresh CAPTCHA"
+                                title="Refresh CAPTCHA"
+                                className="text-modura-secondary-light flex h-[50px] w-[50px] items-center justify-center border border-white/20 bg-white/5 transition-all duration-300 hover:border-modura-secondary hover:text-white"
+                            >
+                                <FiRefreshCw size={18} />
+                            </button>
+
+                            {/* ANSWER INPUT */}
+
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                maxLength={2}
+                                value={captchaInput}
+                                placeholder="Answer"
+                                aria-label="CAPTCHA answer"
+                                aria-invalid={Boolean(captchaError)}
+                                onChange={(e) => {
+                                    setCaptchaInput(
+                                        e.target.value.replace(/\D/g, '').slice(0, 2)
+                                    );
+                                    setCaptchaError('');
+                                }}
+                                className={`h-[50px] min-w-0 flex-1 border bg-transparent px-4 text-[14px] text-white outline-none transition-all duration-300 placeholder:text-modura-gray-400 focus:border-modura-secondary ${captchaError
+                                        ? 'border-red-400'
+                                        : 'border-white/20'
+                                    }`}
+                            />
+
+                        </div>
+
+                        {captchaError && (
+                            <p role="alert" className="mt-2 text-[12px] text-red-300">
+                                {captchaError}
+                            </p>
+                        )}
+                    </div>
+
 
                     {/* BUTTON */}
 

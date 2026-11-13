@@ -337,6 +337,7 @@ export default function BlogClient() {
                                         <Image
                                             src={blog.imageUrl}
                                             fill
+                                            unoptimized
                                             alt={blog.title}
                                             sizes="
                                                 (max-width: 768px) 100vw,

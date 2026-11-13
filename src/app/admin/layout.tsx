@@ -8,8 +8,8 @@ import AdminShell from "../../components/admin/AdminShell";
 import "@/app/admin/admin.css";
  
 export const metadata: Metadata = {
-  title: "MVNL Admin",
-  description: "MVNL Engineering - Admin Panel",
+  title: "Modura Design Group Admin",
+  description: "Modura Design Group Engineering - Admin Panel",
   icons: {
     icon: "/logo-icon.png",
   },

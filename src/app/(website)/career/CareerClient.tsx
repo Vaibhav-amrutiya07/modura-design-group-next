@@ -21,6 +21,7 @@ import {
     FiMapPin,
     FiUsers,
     FiUploadCloud,
+    FiRefreshCw,
 } from 'react-icons/fi';
 
 import Breadcrumb from '../../../components/Breadcrumb';
@@ -113,8 +114,37 @@ export default function CareerClient() {
     const [errors, setErrors] = useState<Record<string, string>>({});
     const [loadingPositions, setLoadingPositions] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [captcha, setCaptcha] = useState({
+        question: '',
+        answer: 0,
+    });
+
+    const [captchaInput, setCaptchaInput] = useState('');
 
     const sectionRef = useRef<HTMLDivElement | null>(null);
+
+
+    const generateCaptcha = () => {
+        const first = Math.floor(Math.random() * 9) + 1;
+        const second = Math.floor(Math.random() * 9) + 1;
+
+        setCaptcha({
+            question: `${first} + ${second} = ?`,
+            answer: first + second,
+        });
+
+        setCaptchaInput('');
+
+        setErrors((prev) => ({
+            ...prev,
+            captcha: '',
+        }));
+    };
+
+    useEffect(() => {
+        generateCaptcha();
+    }, []);
+
 
     // career api 
     useEffect(() => {
@@ -307,6 +337,12 @@ export default function CareerClient() {
                 'Please upload your resume.';
         }
 
+        if (!captchaInput.trim()) {
+            newErrors.captcha = 'Please complete the CAPTCHA.';
+        } else if (Number(captchaInput) !== captcha.answer) {
+            newErrors.captcha = 'Incorrect CAPTCHA. Please try again.';
+        }
+
         setErrors(newErrors);
 
         return Object.keys(newErrors).length === 0;
@@ -359,7 +395,7 @@ export default function CareerClient() {
 
             if (response.data?.success === true) {
                 router.push('/thankyou/apply');
-
+                generateCaptcha();
                 setFormData({
                     name: '',
                     email: '',
@@ -384,8 +420,8 @@ export default function CareerClient() {
             }
 
         } catch (error) {
-            console.error("APPLICATION API ERROR:", error);
-
+            // console.error("APPLICATION API ERROR:", error);
+            generateCaptcha();
             if (axios.isAxiosError(error)) {
                 console.error(
                     "API ERROR RESPONSE:",
@@ -2712,6 +2748,72 @@ export default function CareerClient() {
                                         </p>
                                     )}
                                 </div>
+
+
+                                {/* =================================================
+    CAPTCHA
+================================================= */}
+
+                                <div>
+                                    <label className="mb-2 block text-[14px] font-semibold text-modura-primary">
+                                        Security Verification *
+                                    </label>
+
+                                    <div className="flex flex-wrap items-center gap-4">
+
+                                        {/* CAPTCHA QUESTION */}
+
+                                        <div className="flex h-14 min-w-[150px] items-center justify-center border border-modura-gray-300 bg-modura-off-white px-5">
+                                            <span className="select-none text-[22px] font-bold tracking-[0.08em] text-modura-primary">
+                                                {captcha.question}
+                                            </span>
+                                        </div>
+
+                                        {/* REFRESH */}
+
+                                        <button
+                                            type="button"
+                                            onClick={generateCaptcha}
+                                            aria-label="Refresh CAPTCHA"
+                                            title="Refresh CAPTCHA"
+                                            className="flex h-14 w-14 items-center justify-center border border-modura-gray-300 bg-modura-white text-modura-primary transition-all duration-300 hover:border-modura-secondary hover:text-modura-secondary"
+                                        >
+                                            <FiRefreshCw size={20} />
+                                        </button>
+
+                                        {/* CAPTCHA ANSWER */}
+
+                                        <input
+                                            type="text"
+                                            inputMode="numeric"
+                                            maxLength={2}
+                                            value={captchaInput}
+                                            placeholder="Enter answer"
+                                            onChange={(e) => {
+                                                const value = e.target.value.replace(/\D/g, '').slice(0, 2);
+
+                                                setCaptchaInput(value);
+
+                                                setErrors((prev) => ({
+                                                    ...prev,
+                                                    captcha: '',
+                                                }));
+                                            }}
+                                            className={`h-14 w-full max-w-[220px] border bg-modura-white px-4 text-[14px] text-modura-primary outline-none transition-all duration-300 placeholder:text-modura-gray-400 focus:border-modura-secondary focus:ring-1 focus:ring-modura-secondary/20 ${errors.captcha
+                                                    ? 'border-red-500'
+                                                    : 'border-modura-gray-300'
+                                                }`}
+                                        />
+
+                                    </div>
+
+                                    {errors.captcha && (
+                                        <p className="mt-2 text-xs text-red-600">
+                                            {errors.captcha}
+                                        </p>
+                                    )}
+                                </div>
+
 
 
                                 {/* =================================================
